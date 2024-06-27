@@ -72,6 +72,7 @@ export const App = () => {
 
 	return (
 		<div className={styles.main}>
+			{isSucsess()}
 			{isEmpty()}
 			<form className={styles.form} onSubmit={onSubmit}>
 				<span className={styles.reg}>Регистрация</span>
@@ -103,7 +104,6 @@ export const App = () => {
 					placeholder="Повторите пароль"
 					onChange={onChangePass2}
 				/>
-				{isSucsess()}
 				<button
 					className={styles.btn}
 					type="submit"
