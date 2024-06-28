@@ -49,3 +49,8 @@
 .errorLabel {
 	color: red;
 }
+
+.errorsBlock {
+	display: flex;
+	flex-direction: column;
+}

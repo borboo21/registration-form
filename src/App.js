@@ -1,113 +1,103 @@
 import styles from './App.module.css';
 import { useState, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 const sendData = (formData) => {
 	console.log(formData);
 };
 
+const fieldsScheme = yup.object().shape({
+	email: yup
+		.string()
+		.required('Нужно ввести почту')
+		.matches(
+			/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/iu,
+			'Почта должна содержать @ и домен почтового ящика, пример: "name@mail.ru"!',
+		),
+	password1: yup
+		.string()
+		.required('Нужно ввести пароль!')
+		.min(3, 'Пароль должен быть длинее 3 символов!'),
+	password2: yup
+		.string()
+		.required('Нужно подтвердить пароль!')
+		.oneOf([yup.ref('password1'), null], 'Пароли должны совпадать!'),
+});
+
 export const App = () => {
-	const [email, setEmail] = useState('');
-	const [password1, setPassword1] = useState('');
-	const [password2, setPassword2] = useState('');
-	const [loginError, setLoginError] = useState(false);
-	const [passwordError, setPasswordError] = useState(false);
-
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, dirtyFields },
+	} = useForm({
+		defaultValues: {
+			email: '',
+			password1: '',
+			password2: '',
+		},
+		resolver: yupResolver(fieldsScheme),
+	});
 	const submitBtnRef = useRef(null);
+	const emailError = errors.email?.message;
+	const password1Error = errors.password1?.message;
+	const password2Error = errors.password2?.message;
 
-	const onSubmit = (event) => {
-		event.preventDefault();
-		sendData({ email, password1, password2 });
-	};
-
-	const onChangeMail = ({ target }) => {
-		setEmail(target.value);
-		const EMAIL_REGEXP =
-			/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/iu;
-
-		!EMAIL_REGEXP.test(target.value)
-			? setLoginError(
-					'Почта должна содержать @ и домен почтового ящика, пример: "name@mail.ru"!',
-				)
-			: setLoginError(null);
-	};
-
-	const onChangePass1 = ({ target }) => {
-		setPassword1(target.value);
-		if (target.value.length <= 3) {
-			setPasswordError('Пароль должен быть длинее 3 символов');
-		} else {
-			setPasswordError(null);
-		}
-		if (target.value === password2) {
-			setPasswordError(null);
-		} else {
-			setPasswordError('Пароли должны совпадать');
-		}
-	};
-
-	const onChangePass2 = ({ target }) => {
-		setPassword2(target.value);
-		if (target.value === password1) {
-			setPasswordError(null);
-		} else {
-			setPasswordError('Пароли должны совпадать');
-		}
-	};
-
-	let empty = true;
-
-	const isSucsess = () => {
-		if (loginError === null && passwordError === null) {
+	let disableBtn = true;
+	const isDisabled = () => {
+		if (Object.keys(errors).length === 0 && Object.keys(dirtyFields).length === 3) {
+			disableBtn = false;
 			return submitBtnRef.current.focus();
-		}
-	};
-
-	const isEmpty = () => {
-		if (email === '' || password1 === '' || password2 === '') {
-			return (empty = true);
 		} else {
-			return (empty = false);
+			disableBtn = true;
 		}
 	};
 
 	return (
 		<div className={styles.main}>
-			{isEmpty()}
-			<form className={styles.form} onSubmit={onSubmit}>
+			{isDisabled()}
+			<form className={styles.form} onSubmit={handleSubmit(sendData)}>
 				<span className={styles.reg}>Регистрация</span>
-				{loginError && <span className={styles.errorLabel}>{loginError}</span>}
+
+				{emailError && (
+					<div className={styles.errorsBlock}>
+						<span className={styles.errorLabel}>{emailError}</span>
+					</div>
+				)}
 				<input
 					className={styles.input}
-					type="email"
+					type="login"
 					name="email"
-					value={email}
 					placeholder="Почта"
-					onChange={onChangeMail}
+					{...register('email')}
 				/>
-				{passwordError && (
-					<div className={styles.errorLabel}>{passwordError}</div>
-				)}
+				<div className={styles.errorsBlock}>
+					{password1Error && (
+						<span className={styles.errorLabel}>{password1Error}</span>
+					)}
+					{password2Error && (
+						<span className={styles.errorLabel}>{password2Error}</span>
+					)}
+				</div>
 				<input
 					className={styles.input}
 					type="password"
 					name="password1"
-					value={password1}
 					placeholder="Пароль"
-					onChange={onChangePass1}
+					{...register('password1')}
 				/>
 				<input
 					className={styles.input}
 					type="password"
 					name="password2"
-					value={password2}
 					placeholder="Повторите пароль"
-					onChange={onChangePass2}
+					{...register('password2')}
 				/>
-				{isSucsess()}
 				<button
 					className={styles.btn}
 					type="submit"
-					disabled={loginError !== null || passwordError !== null || empty}
+					disabled={disableBtn}
 					ref={submitBtnRef}
 				>
 					Зарегистрироваться
@@ -116,45 +106,3 @@ export const App = () => {
 		</div>
 	);
 };
-
-// const fieldsScheme = yup.object().shape({
-// 	login: yup
-// 		.string()
-// 		.matches(
-// 			/^[\w_]*$/,
-// 			'Должны использоваться буквы, цифры или нижние подчеркивания',
-// 		)
-// 		.max(20, 'Должно быть меньше 20 символов.')
-// 		.min(3, 'Должно быть больше 3 символов.'),
-// });
-
-// export const App = () => {
-// 	const {
-// 		register,
-// 		handleSubmit,
-// 		formState: { errors },
-// 	} = useForm({
-// 		defaultValues: {
-// 			login: '',
-// 		},
-// 		resolver: yupResolver(fieldsScheme),
-// 	});
-
-// 	const loginError = errors.login?.message;
-
-// 	const onSubmit = (formData) => {
-// 		console.log(formData);
-// 	};
-
-// 	return (
-// 		<div className={styles.App}>
-// 			<form onSubmit={handleSubmit(onSubmit)}>
-// 				{loginError && <div className={styles.errorLabel}>{loginError}</div>}
-// 				<input name="login" type="text" {...register('login')} />
-// 				<button type="submit" disabled={!!loginError}>
-// 					Отправить
-// 				</button>
-// 			</form>
-// 		</div>
-// 	);
-// };
