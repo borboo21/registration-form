@@ -70,10 +70,11 @@ export const App = () => {
 		}
 	};
 
+	isSucsess();
+	isEmpty();
+
 	return (
 		<div className={styles.main}>
-			{isSucsess()}
-			{isEmpty()}
 			<form className={styles.form} onSubmit={onSubmit}>
 				<span className={styles.reg}>Регистрация</span>
 				{loginError && <span className={styles.errorLabel}>{loginError}</span>}
